@@ -6,54 +6,54 @@
     "users": {
       "$uid": {
         ".read": "auth != null",
-        ".write": "auth != null && auth.uid === $uid",
-        "username": {
-          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 20"
-        },
-        "online": {
-          ".validate": "newData.isBoolean()"
-        },
-        "lastActive": {
-          ".validate": "newData.isNumber() || newData.val() == now"
-        }
+        ".write": "auth != null && auth.uid === $uid"
       }
     },
 
-    "typing": {
-      "$uid": {
-        ".read": "auth != null",
-        ".write": "auth != null && auth.uid === $uid",
-        "userId": {
-          ".validate": "newData.val() === auth.uid"
+    "rooms": {
+      "$roomId": {
+        "info": {
+          ".read": "auth != null",
+          ".write": "auth != null"
         },
-        "username": {
-          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 20"
+        "members": {
+          "$uid": {
+            ".read": "auth != null",
+            ".write": "auth != null && auth.uid === $uid"
+          }
         },
-        "isTyping": {
-          ".validate": "newData.isBoolean()"
+        "typing": {
+          "$uid": {
+            ".read": "auth != null",
+            ".write": "auth != null && auth.uid === $uid"
+          }
         },
-        "updatedAt": {
-          ".validate": "newData.isNumber() || newData.val() == now"
-        }
-      }
-    },
-
-    "messages": {
-      ".indexOn": ["timestamp"],
-      "$msgId": {
-        ".read": "auth != null",
-        ".write": "auth != null",
-        "userId": {
-          ".validate": "newData.val() === auth.uid"
-        },
-        "username": {
-          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 20"
-        },
-        "text": {
-          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 500"
-        },
-        "timestamp": {
-          ".validate": "newData.isNumber() || newData.val() == now"
+        "messages": {
+          ".indexOn": ["timestamp"],
+          "$msgId": {
+            ".read": "auth != null",
+            ".write": "auth != null",
+            "userId": {
+              ".validate": "newData.val() === auth.uid"
+            },
+            "username": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 20"
+            },
+            "text": {
+              ".validate": "newData.isString() && newData.val().length <= 500"
+            },
+            "imageUrl": {
+              ".validate": "newData.isString()"
+            },
+            "timestamp": {
+              ".validate": "newData.isNumber() || newData.val() == now"
+            },
+            "reactions": {
+              "$uid": {
+                ".validate": "newData.isString() && newData.val().length <= 4"
+              }
+            }
+          }
         }
       }
     }

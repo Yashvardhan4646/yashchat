@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>YashChat • Anyone Can Chat</title>
+  <title>YashChat</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,128 +19,136 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="app-bg"></div>
-
   <!-- LOGIN -->
   <section class="login-screen" id="loginScreen">
     <div class="login-card">
-      <div class="brand-badge">
+      <div class="logo-box">
         <i class="fa-solid fa-comments"></i>
       </div>
-
       <h1>YashChat</h1>
-      <p class="login-subtitle">Public real-time chat, but prettier and less broken.</p>
+      <p class="login-sub">Clean. Fast. Slightly dangerous because humans are involved.</p>
 
-      <div class="login-input-wrap">
+      <div class="input-wrap">
         <i class="fa-solid fa-user"></i>
-        <input
-          type="text"
-          id="usernameInput"
-          placeholder="Choose a display name"
-          maxlength="20"
-          autocomplete="off"
-        />
+        <input type="text" id="usernameInput" placeholder="Enter display name" maxlength="20" />
       </div>
 
       <button id="loginButton" class="primary-btn">
-        <i class="fa-solid fa-arrow-right-to-bracket"></i>
-        Start Chatting
+        <i class="fa-solid fa-arrow-right-to-bracket"></i> Join Chat
       </button>
-
-      <p class="login-note">
-        By joining, you agree to basic human decency. Rare, I know.
-      </p>
     </div>
   </section>
 
-  <!-- CHAT -->
-  <section class="chat-screen hidden" id="chatScreen">
-    <div class="chat-layout">
-      <!-- Sidebar -->
+  <!-- APP -->
+  <section class="app-screen hidden" id="chatScreen">
+    <div class="app-layout">
+
+      <!-- SIDEBAR -->
       <aside class="sidebar">
         <div class="sidebar-top">
-          <div class="logo-wrap">
-            <div class="logo-circle">
-              <i class="fa-solid fa-bolt"></i>
-            </div>
+          <div class="brand">
+            <div class="brand-icon"><i class="fa-solid fa-bolt"></i></div>
             <div>
               <h2>YashChat</h2>
-              <p>Global room</p>
+              <p>Room based public chat</p>
             </div>
           </div>
         </div>
 
         <div class="sidebar-card">
-          <p class="sidebar-label">You</p>
-          <div class="current-user-card">
+          <p class="card-title">You</p>
+          <div class="user-card">
             <div class="avatar" id="sidebarAvatar">Y</div>
             <div>
               <div class="username" id="currentUser">Username</div>
-              <div class="status online-dot-text">
-                <span class="dot online"></span> Online
-              </div>
+              <div class="subline"><span class="online-dot"></span> Online</div>
             </div>
           </div>
         </div>
 
         <div class="sidebar-card">
-          <div class="online-header">
-            <p class="sidebar-label">Online Now</p>
-            <span class="online-count-pill" id="userCount">0</span>
+          <div class="rooms-header">
+            <p class="card-title">Rooms</p>
+            <button id="createRoomBtn" class="mini-btn">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+          </div>
+
+          <div class="create-room-box hidden" id="createRoomBox">
+            <input type="text" id="newRoomInput" placeholder="New room name..." maxlength="20" />
+            <button id="confirmCreateRoomBtn" class="primary-btn small-btn">Create</button>
+          </div>
+
+          <div id="roomsList" class="rooms-list"></div>
+        </div>
+
+        <div class="sidebar-card">
+          <div class="rooms-header">
+            <p class="card-title">Online</p>
+            <span class="pill" id="userCount">0</span>
           </div>
           <div id="onlineUsersList" class="online-users-list"></div>
         </div>
       </aside>
 
-      <!-- Main Chat -->
+      <!-- MAIN -->
       <main class="chat-main">
         <header class="chat-header">
-          <div class="chat-room-info">
-            <div class="room-icon">
-              <i class="fa-solid fa-hashtag"></i>
-            </div>
+          <div class="room-meta">
+            <div class="room-icon"><i class="fa-solid fa-hashtag"></i></div>
             <div>
-              <h3>global-chat</h3>
-              <p>Talk to anyone. Try not to start a war.</p>
+              <h3 id="roomTitle">global</h3>
+              <p id="roomSubtitle">Global room</p>
             </div>
           </div>
 
-          <button class="ghost-btn" id="logoutButton" title="Logout">
-            <i class="fa-solid fa-right-from-bracket"></i>
-            <span>Leave</span>
+          <button id="logoutButton" class="ghost-btn">
+            <i class="fa-solid fa-right-from-bracket"></i> Leave
           </button>
         </header>
 
-        <div class="messages-wrapper" id="messagesWrapper">
+        <div class="messages-area">
           <div class="msg-container" id="msgContainer"></div>
 
-          <div class="typing-wrap" id="typingWrap">
+          <div class="typing-area">
             <div class="typing-indicator hidden" id="typingIndicator">
-              <div class="typing-avatar" id="typingAvatar">U</div>
+              <div class="avatar small-avatar" id="typingAvatar">U</div>
               <div class="typing-bubble">
-                <span id="typingText">Someone is typing</span>
-                <div class="typing-dots">
-                  <span></span><span></span><span></span>
-                </div>
+                <span id="typingText">Someone is typing...</span>
+                <div class="typing-dots"><span></span><span></span><span></span></div>
               </div>
             </div>
           </div>
         </div>
 
+        <!-- EMOJI BAR -->
+        <div class="emoji-bar hidden" id="emojiBar">
+          <button class="emoji-btn">😀</button>
+          <button class="emoji-btn">😂</button>
+          <button class="emoji-btn">😍</button>
+          <button class="emoji-btn">🔥</button>
+          <button class="emoji-btn">💀</button>
+          <button class="emoji-btn">😭</button>
+          <button class="emoji-btn">😎</button>
+          <button class="emoji-btn">❤️</button>
+          <button class="emoji-btn">👍</button>
+          <button class="emoji-btn">👀</button>
+        </div>
+
+        <!-- COMPOSER -->
         <div class="composer">
-          <button class="icon-btn" type="button" title="Emoji (future suffering)">
+          <button class="icon-btn" id="toggleEmojiBtn" title="Emoji">
             <i class="fa-regular fa-face-smile"></i>
           </button>
 
-          <input
-            type="text"
-            id="messageInput"
-            placeholder="Type a message..."
-            autocomplete="off"
-            maxlength="500"
-          />
+          <label class="icon-btn file-btn" title="Upload image">
+            <i class="fa-regular fa-image"></i>
+            <input type="file" id="imageInput" accept="image/*" hidden />
+          </label>
 
-          <button class="send-btn" id="sendButton" type="button" title="Send message">
+          <input type="text" id="messageInput" placeholder="Type a message..." maxlength="500" />
+
+          <button class="send-btn" id="sendButton">
             <i class="fa-solid fa-paper-plane"></i>
           </button>
         </div>
