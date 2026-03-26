@@ -1120,3 +1120,334 @@ body {
     font-size: 0.86rem;
   }
 }
+/* ===== MESSAGES ===== */
+.messages-area {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top left, rgba(255, 63, 135, 0.05), transparent 28%),
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.03), transparent 24%),
+    var(--bg);
+}
+
+.msg-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 0;
+  scroll-behavior: smooth;
+}
+
+.msg-container::-webkit-scrollbar {
+  width: 8px;
+}
+.msg-container::-webkit-scrollbar-thumb {
+  background: #23232d;
+  border-radius: 999px;
+}
+
+/* system note */
+.system-note {
+  align-self: center;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  color: var(--muted);
+  font-size: 0.84rem;
+  padding: 10px 16px;
+  border-radius: 999px;
+  backdrop-filter: blur(12px);
+}
+
+/* ===== SINGLE MESSAGE ===== */
+.message-row {
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.message-row.received {
+  justify-content: flex-start;
+}
+
+.message-row.sent {
+  justify-content: flex-end;
+}
+
+/* avatar */
+.message-avatar {
+  width: 46px;
+  height: 46px;
+  min-width: 46px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: white;
+  font-weight: 800;
+  font-size: 1rem;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.2);
+  flex-shrink: 0;
+}
+
+/* push sent avatar to right */
+.message-row.sent .message-avatar {
+  order: 2;
+}
+
+/* stack */
+.message-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: fit-content;
+  max-width: min(72%, 720px);
+  min-width: 140px;
+}
+
+.message-row.sent .message-stack {
+  align-items: flex-end;
+}
+
+.message-row.received .message-stack {
+  align-items: flex-start;
+}
+
+/* meta */
+.message-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 4px;
+  flex-wrap: wrap;
+}
+
+.message-row.sent .message-meta {
+  justify-content: flex-end;
+}
+
+.message-row.received .message-meta {
+  justify-content: flex-start;
+}
+
+.message-username {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.message-time {
+  font-size: 0.84rem;
+  color: #8d8da3;
+  font-weight: 500;
+}
+
+/* BUBBLE */
+.bubble {
+  display: inline-block;
+  width: auto;
+  min-width: 140px;
+  max-width: 100%;
+  padding: 18px 22px;
+  border-radius: 28px;
+  line-height: 1.7;
+  font-size: 1rem;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  border: 1px solid rgba(255,255,255,0.06);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 18px 50px rgba(0,0,0,0.24);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.message-row.received .bubble {
+  background: linear-gradient(180deg, rgba(20,20,28,0.95), rgba(14,14,20,0.95));
+  color: #fff;
+  border-bottom-left-radius: 12px;
+}
+
+.message-row.sent .bubble {
+  background: linear-gradient(180deg, #ff4a94, #ff2f86);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-bottom-right-radius: 12px;
+  box-shadow: 0 16px 40px rgba(255, 63, 135, 0.24);
+}
+
+.message-row:hover .bubble {
+  transform: translateY(-1px);
+}
+
+.message-text {
+  display: block;
+}
+
+/* image */
+.message-image {
+  width: 100%;
+  max-width: 360px;
+  border-radius: 18px;
+  margin-top: 12px;
+  display: block;
+  border: 1px solid rgba(255,255,255,0.08);
+  object-fit: cover;
+}
+
+/* reactions */
+.reactions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.message-row.sent .reactions-row {
+  justify-content: flex-end;
+}
+
+.message-row.received .reactions-row {
+  justify-content: flex-start;
+}
+
+.reaction-pill {
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  color: white;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 0.86rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  backdrop-filter: blur(12px);
+  transition: 0.2s ease;
+}
+
+.reaction-pill:hover {
+  border-color: rgba(255, 63, 135, 0.7);
+  transform: translateY(-1px);
+}
+
+.reaction-pill.active {
+  background: rgba(255, 63, 135, 0.14);
+  border-color: rgba(255, 63, 135, 0.7);
+}
+
+/* quick tools */
+.message-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
+  transition: 0.2s ease;
+}
+
+.message-row:hover .message-tools {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.message-row.sent .message-tools {
+  justify-content: flex-end;
+}
+
+.message-row.received .message-tools {
+  justify-content: flex-start;
+}
+
+.react-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  backdrop-filter: blur(12px);
+  transition: 0.2s ease;
+}
+
+.react-btn:hover {
+  border-color: rgba(255, 63, 135, 0.7);
+  transform: translateY(-2px) scale(1.03);
+}
+
+/* mobile */
+@media (max-width: 980px) {
+  .message-stack {
+    max-width: 88%;
+  }
+
+  .message-avatar {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    border-radius: 16px;
+    font-size: 0.95rem;
+  }
+
+  .bubble {
+    padding: 16px 18px;
+    border-radius: 24px;
+    min-width: 110px;
+  }
+
+  .message-image {
+    max-width: 260px;
+    border-radius: 16px;
+  }
+
+  .message-tools {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+}
+
+@media (max-width: 520px) {
+  .msg-container {
+    padding: 18px 14px 24px;
+  }
+
+  .message-stack {
+    max-width: 92%;
+  }
+
+  .message-username {
+    font-size: 0.9rem;
+  }
+
+  .message-time {
+    font-size: 0.78rem;
+  }
+
+  .bubble {
+    font-size: 0.96rem;
+    line-height: 1.65;
+  }
+
+  .react-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 0.92rem;
+  }
+
+  .reaction-pill {
+    padding: 7px 10px;
+    font-size: 0.8rem;
+  }
+}
