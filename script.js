@@ -2,7 +2,7 @@
 // FIREBASE CONFIG
 // ===============================
 const firebaseConfig = {
-   apiKey: "AIzaSyCCZI0fFJjds2QdkWaYdeQSvXHZr0O3x_M",
+  apiKey: "AIzaSyCCZI0fFJjds2QdkWaYdeQSvXHZr0O3x_M",
   authDomain: "yashchat-b3d9a.firebaseapp.com",
   projectId: "yashchat-b3d9a",
   storageBucket: "yashchat-b3d9a.firebasestorage.app",
@@ -16,8 +16,7 @@ const database = firebase.database();
 const auth = firebase.auth();
 
 // ===============================
-// CLOUDINARY PLACEHOLDER CONFIG
-// Replace later with your actual values
+// CLOUDINARY
 // ===============================
 const CLOUDINARY_CLOUD_NAME = "dcfdaifom";
 const CLOUDINARY_UPLOAD_PRESET = "yashchat_upload";
@@ -30,6 +29,7 @@ const chatScreen = document.getElementById("chatScreen");
 const usernameInput = document.getElementById("usernameInput");
 const loginButton = document.getElementById("loginButton");
 const logoutButton = document.getElementById("logoutButton");
+const logoutButtonMobile = document.getElementById("logoutButtonMobile");
 
 const currentUserEl = document.getElementById("currentUser");
 const sidebarAvatar = document.getElementById("sidebarAvatar");
@@ -41,9 +41,18 @@ const createRoomBtn = document.getElementById("createRoomBtn");
 const createRoomBox = document.getElementById("createRoomBox");
 const newRoomInput = document.getElementById("newRoomInput");
 const confirmCreateRoomBtn = document.getElementById("confirmCreateRoomBtn");
+const roomPrivacySelect = document.getElementById("roomPrivacySelect");
+const roomPasswordInput = document.getElementById("roomPasswordInput");
+
+const joinInviteBtn = document.getElementById("joinInviteBtn");
+const joinInviteBox = document.getElementById("joinInviteBox");
+const inviteLinkInput = document.getElementById("inviteLinkInput");
+const confirmJoinInviteBtn = document.getElementById("confirmJoinInviteBtn");
+const copyInviteBtn = document.getElementById("copyInviteBtn");
 
 const roomTitle = document.getElementById("roomTitle");
 const roomSubtitle = document.getElementById("roomSubtitle");
+const mobileRoomTitle = document.getElementById("mobileRoomTitle");
 
 const msgContainer = document.getElementById("msgContainer");
 const messageInput = document.getElementById("messageInput");
@@ -55,19 +64,25 @@ const emojiBar = document.getElementById("emojiBar");
 
 const typingIndicator = document.getElementById("typingIndicator");
 const typingText = document.getElementById("typingText");
-const typingAvatar = document.getElementById("typingAvatar");
+
+const sidebar = document.getElementById("sidebar");
+const sidebarOverlay = document.getElementById("sidebarOverlay");
+const mobileSidebarToggle = document.getElementById("mobileSidebarToggle");
+const closeSidebarBtn = document.getElementById("closeSidebarBtn");
 
 // ===============================
 // STATE
 // ===============================
 let currentUser = { id: "", name: "" };
 let currentRoom = "global";
+let currentRoomInfo = { name: "global", isPrivate: false };
 let typingTimer = null;
 const DONE_TYPING_INTERVAL = 1200;
 
 let renderedMessageIds = new Set();
 let messagesListenerRef = null;
 let typingListenerRef = null;
+let reactionsRefs = [];
 
 // ===============================
 // HELPERS
@@ -132,11 +147,19 @@ function loadSavedUsername() {
   return localStorage.getItem("yashchat_username") || "";
 }
 
-function setTypingVisible(show, username = "", avatar = "U") {
+function saveJoinedPrivateRoom(roomId) {
+  const key = `yashchat_joined_${roomId}`;
+  localStorage.setItem(key, "true");
+}
+
+function hasJoinedPrivateRoom(roomId) {
+  return localStorage.getItem(`yashchat_joined_${roomId}`) === "true";
+}
+
+function setTypingVisible(show, username = "") {
   if (show) {
     typingIndicator.classList.remove("hidden");
     typingText.textContent = `${username} is typing...`;
-    typingAvatar.textContent = avatar;
   } else {
     typingIndicator.classList.add("hidden");
   }
@@ -147,6 +170,44 @@ function createSystemMessage(text) {
   note.className = "system-note";
   note.textContent = text;
   msgContainer.appendChild(note);
+}
+
+function generateInviteCode(roomId, password = "") {
+  return btoa(JSON.stringify({ roomId, password }));
+}
+
+function parseInviteCode(input) {
+  try {
+    if (input.includes("?invite=")) {
+      input = new URL(input).searchParams.get("invite");
+    }
+    return JSON.parse(atob(input));
+  } catch {
+    return null;
+  }
+}
+
+function updateRoomHeader() {
+  const label = currentRoomInfo?.name || currentRoom;
+  const isPrivate = currentRoomInfo?.isPrivate;
+
+  roomTitle.textContent = label;
+  mobileRoomTitle.textContent = `# ${label}`;
+  roomSubtitle.textContent = isPrivate
+    ? "Private room"
+    : currentRoom === "global"
+    ? "Global room"
+    : "Public room";
+}
+
+function closeSidebar() {
+  sidebar.classList.remove("open");
+  sidebarOverlay.classList.remove("show");
+}
+
+function openSidebar() {
+  sidebar.classList.add("open");
+  sidebarOverlay.classList.add("show");
 }
 
 // ===============================
@@ -181,7 +242,9 @@ async function initChat(username) {
     await setupPresence();
     setupUsersListener();
     setupRoomsListener();
-    switchRoom("global");
+    await switchRoom("global");
+
+    checkInviteInURL();
 
     messageInput.focus();
   } catch (error) {
@@ -198,7 +261,9 @@ async function ensureGlobalRoom() {
     name: "global",
     createdBy: "system",
     createdAt: firebase.database.ServerValue.TIMESTAMP,
-    isPublic: true
+    isPublic: true,
+    isPrivate: false,
+    password: ""
   });
 }
 
@@ -281,18 +346,45 @@ function renderRooms(rooms) {
   roomsList.innerHTML = "";
 
   Object.entries(rooms).forEach(([roomId, roomData]) => {
-    const roomName = roomData?.info?.name || roomId;
+    const info = roomData?.info || {};
+    const roomName = info.name || roomId;
+    const isPrivate = !!info.isPrivate;
+    const membersCount = roomData?.members ? Object.keys(roomData.members).length : 0;
+
+    if (isPrivate && roomId !== currentRoom && !hasJoinedPrivateRoom(roomId)) {
+      return;
+    }
+
     const item = document.createElement("div");
     item.className = `room-item ${roomId === currentRoom ? "active" : ""}`;
     item.innerHTML = `
-      <div class="avatar">#</div>
+      <div class="avatar">${isPrivate ? "🔒" : "#"}</div>
       <div>
         <div class="username">${escapeHtml(roomName)}</div>
-        <div class="subline">${roomId === "global" ? "Public default room" : "Custom room"}</div>
+        <div class="room-badges">
+          <span class="room-badge">${isPrivate ? "Private" : "Public"}</span>
+          <span class="room-badge">${membersCount} online</span>
+        </div>
       </div>
     `;
 
-    item.addEventListener("click", () => switchRoom(roomId));
+    item.addEventListener("click", async () => {
+      if (isPrivate && !hasJoinedPrivateRoom(roomId) && roomId !== currentRoom) {
+        const entered = prompt(`Enter password for #${roomName}`);
+        if (entered === null) return;
+
+        if (entered !== info.password) {
+          alert("Wrong password.");
+          return;
+        }
+
+        saveJoinedPrivateRoom(roomId);
+      }
+
+      await switchRoom(roomId);
+      closeSidebar();
+    });
+
     roomsList.appendChild(item);
   });
 }
@@ -300,9 +392,16 @@ function renderRooms(rooms) {
 async function createRoom() {
   const roomNameRaw = newRoomInput.value.trim();
   const roomId = sanitizeRoomName(roomNameRaw);
+  const privacy = roomPrivacySelect.value;
+  const password = roomPasswordInput.value.trim();
 
   if (!roomId || roomId.length < 2) {
     alert("Enter a valid room name.");
+    return;
+  }
+
+  if (privacy === "private" && password.length < 4) {
+    alert("Private room password must be at least 4 characters.");
     return;
   }
 
@@ -318,26 +417,35 @@ async function createRoom() {
     name: roomId,
     createdBy: currentUser.id,
     createdAt: firebase.database.ServerValue.TIMESTAMP,
-    isPublic: true
+    isPublic: privacy === "public",
+    isPrivate: privacy === "private",
+    password: privacy === "private" ? password : ""
   });
 
   await roomRef.child("messages").push({
     type: "system",
-    text: `${currentUser.name} created #${roomId}`,
+    text: `${currentUser.name} created ${privacy === "private" ? "private" : "public"} room #${roomId}`,
     timestamp: firebase.database.ServerValue.TIMESTAMP
   });
 
+  if (privacy === "private") {
+    saveJoinedPrivateRoom(roomId);
+  }
+
   newRoomInput.value = "";
+  roomPasswordInput.value = "";
   createRoomBox.classList.add("hidden");
-  switchRoom(roomId);
+
+  await switchRoom(roomId);
 }
 
 async function switchRoom(roomId) {
   if (roomId === currentRoom && messagesListenerRef) return;
 
-  // Cleanup old listeners
   if (messagesListenerRef) messagesListenerRef.off();
   if (typingListenerRef) typingListenerRef.off();
+  reactionsRefs.forEach(ref => ref.off());
+  reactionsRefs = [];
 
   await updateTypingStatus(false);
 
@@ -354,9 +462,10 @@ async function switchRoom(roomId) {
   renderedMessageIds.clear();
   msgContainer.innerHTML = "";
 
-  roomTitle.textContent = roomId;
-  roomSubtitle.textContent = roomId === "global" ? "Global room" : "Custom room";
+  const roomInfoSnap = await database.ref(`rooms/${roomId}/info`).once("value");
+  currentRoomInfo = roomInfoSnap.val() || { name: roomId, isPrivate: false };
 
+  updateRoomHeader();
   setupMessageListener();
   setupTypingListener();
 
@@ -398,21 +507,26 @@ function displayMessage(messageId, message) {
     : "";
 
   row.innerHTML = `
-    <div class="avatar small-avatar">${getInitials(message.username)}</div>
-    <div class="message-content">
+    <div class="message-avatar">${getInitials(message.username)}</div>
+
+    <div class="message-stack">
       <div class="message-meta">
-        <span class="message-username">${escapeHtml(message.username || "Unknown")}</span>
+        ${!isMine ? `<span class="message-username">${escapeHtml(message.username || "Unknown")}</span>` : ""}
         <span class="message-time">${formatTime(message.timestamp)}</span>
       </div>
+
       <div class="bubble">
-        ${message.text ? escapeHtml(message.text) : ""}
+        ${message.text ? `<span class="message-text">${escapeHtml(message.text)}</span>` : ""}
         ${imageHtml}
       </div>
-      <div class="message-actions" id="actions-${messageId}"></div>
+
+      <div class="reactions-row" id="reactions-${messageId}"></div>
+      <div class="message-tools" id="tools-${messageId}"></div>
     </div>
   `;
 
   msgContainer.appendChild(row);
+
   renderReactions(messageId, message.reactions || {});
   addReactionButtons(messageId);
 }
@@ -452,15 +566,18 @@ async function sendMessage(imageUrl = "") {
 const quickReactions = ["❤️", "🔥", "😂", "💀", "👍", "👀"];
 
 function addReactionButtons(messageId) {
-  const actions = document.getElementById(`actions-${messageId}`);
-  if (!actions) return;
+  const tools = document.getElementById(`tools-${messageId}`);
+  if (!tools) return;
+
+  tools.innerHTML = "";
 
   quickReactions.forEach((emoji) => {
     const btn = document.createElement("button");
     btn.className = "react-btn";
     btn.textContent = emoji;
+    btn.title = `React with ${emoji}`;
     btn.addEventListener("click", () => toggleReaction(messageId, emoji));
-    actions.appendChild(btn);
+    tools.appendChild(btn);
   });
 
   database.ref(roomPath(`messages/${messageId}/reactions`)).on("value", (snapshot) => {
@@ -469,11 +586,10 @@ function addReactionButtons(messageId) {
 }
 
 function renderReactions(messageId, reactions) {
-  const actions = document.getElementById(`actions-${messageId}`);
-  if (!actions) return;
+  const reactionsRow = document.getElementById(`reactions-${messageId}`);
+  if (!reactionsRow) return;
 
-  const oldPills = actions.querySelectorAll(".reaction-pill");
-  oldPills.forEach((pill) => pill.remove());
+  reactionsRow.innerHTML = "";
 
   const grouped = {};
 
@@ -486,8 +602,9 @@ function renderReactions(messageId, reactions) {
     const pill = document.createElement("button");
     pill.className = `reaction-pill ${users.includes(currentUser.id) ? "active" : ""}`;
     pill.innerHTML = `${emoji} <span>${users.length}</span>`;
+    pill.title = `${users.length} reaction${users.length > 1 ? "s" : ""}`;
     pill.addEventListener("click", () => toggleReaction(messageId, emoji));
-    actions.appendChild(pill);
+    reactionsRow.appendChild(pill);
   });
 }
 
@@ -516,7 +633,7 @@ function setupTypingListener() {
 
     if (typingUsers.length > 0) {
       const activeUser = typingUsers[0];
-      setTypingVisible(true, activeUser.username, getInitials(activeUser.username));
+      setTypingVisible(true, activeUser.username);
     } else {
       setTypingVisible(false);
     }
@@ -571,9 +688,70 @@ async function uploadImageToCloudinary(file) {
     return data.secure_url;
   } catch (error) {
     console.error(error);
-    alert("Image upload failed. Add your Cloudinary keys properly, mortal.");
+    alert("Image upload failed. Your Cloudinary is having a personality disorder.");
     return null;
   }
+}
+
+// ===============================
+// INVITES
+// ===============================
+function copyCurrentRoomInvite() {
+  if (!currentRoom || currentRoom === "global") {
+    alert("Global room doesn't need an invite.");
+    return;
+  }
+
+  const password = currentRoomInfo?.password || "";
+  const code = generateInviteCode(currentRoom, password);
+  const inviteUrl = `${window.location.origin}${window.location.pathname}?invite=${code}`;
+
+  navigator.clipboard.writeText(inviteUrl)
+    .then(() => alert("Invite link copied. Humanity survives another day."))
+    .catch(() => alert(`Copy failed. Use this manually:\n${inviteUrl}`));
+}
+
+async function joinRoomFromInvite() {
+  const raw = inviteLinkInput.value.trim();
+  if (!raw) return alert("Paste an invite first.");
+
+  const parsed = parseInviteCode(raw);
+  if (!parsed?.roomId) {
+    alert("Invalid invite link/code.");
+    return;
+  }
+
+  const infoSnap = await database.ref(`rooms/${parsed.roomId}/info`).once("value");
+  if (!infoSnap.exists()) {
+    alert("Room not found.");
+    return;
+  }
+
+  const info = infoSnap.val();
+
+  if (info.isPrivate && info.password !== parsed.password) {
+    alert("Invite password mismatch.");
+    return;
+  }
+
+  saveJoinedPrivateRoom(parsed.roomId);
+  inviteLinkInput.value = "";
+  joinInviteBox.classList.add("hidden");
+  await switchRoom(parsed.roomId);
+  closeSidebar();
+}
+
+function checkInviteInURL() {
+  const params = new URLSearchParams(window.location.search);
+  const invite = params.get("invite");
+  if (!invite) return;
+
+  inviteLinkInput.value = invite;
+  joinRoomFromInvite();
+
+  params.delete("invite");
+  const cleanUrl = `${window.location.pathname}`;
+  window.history.replaceState({}, document.title, cleanUrl);
 }
 
 // ===============================
@@ -595,7 +773,13 @@ async function logout() {
 
     currentUser = { id: "", name: "" };
     currentRoom = "global";
+    currentRoomInfo = { name: "global", isPrivate: false };
     renderedMessageIds.clear();
+
+    if (messagesListenerRef) messagesListenerRef.off();
+    if (typingListenerRef) typingListenerRef.off();
+    reactionsRefs.forEach(ref => ref.off());
+    reactionsRefs = [];
 
     msgContainer.innerHTML = "";
     roomsList.innerHTML = "";
@@ -606,6 +790,7 @@ async function logout() {
 
     usernameInput.value = loadSavedUsername();
     setTypingVisible(false);
+    closeSidebar();
   } catch (error) {
     console.error(error);
   }
@@ -646,6 +831,7 @@ messageInput.addEventListener("input", async () => {
 messageInput.addEventListener("blur", () => updateTypingStatus(false));
 
 logoutButton.addEventListener("click", logout);
+logoutButtonMobile.addEventListener("click", logout);
 
 // Emoji bar toggle
 toggleEmojiBtn.addEventListener("click", () => {
@@ -663,12 +849,27 @@ document.querySelectorAll(".emoji-btn").forEach((btn) => {
 // Room create UI
 createRoomBtn.addEventListener("click", () => {
   createRoomBox.classList.toggle("hidden");
+  joinInviteBox.classList.add("hidden");
+});
+
+joinInviteBtn.addEventListener("click", () => {
+  joinInviteBox.classList.toggle("hidden");
+  createRoomBox.classList.add("hidden");
+});
+
+roomPrivacySelect.addEventListener("change", () => {
+  roomPasswordInput.classList.toggle("hidden", roomPrivacySelect.value !== "private");
 });
 
 confirmCreateRoomBtn.addEventListener("click", createRoom);
+confirmJoinInviteBtn.addEventListener("click", joinRoomFromInvite);
 
 newRoomInput.addEventListener("keypress", (e) => {
   if (e.key === "Enter") createRoom();
+});
+
+inviteLinkInput.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") joinRoomFromInvite();
 });
 
 // Image upload
@@ -689,6 +890,14 @@ imageInput.addEventListener("change", async (e) => {
   sendButton.innerHTML = `<i class="fa-solid fa-paper-plane"></i>`;
   imageInput.value = "";
 });
+
+// Invite copy
+copyInviteBtn.addEventListener("click", copyCurrentRoomInvite);
+
+// Mobile sidebar
+mobileSidebarToggle.addEventListener("click", openSidebar);
+closeSidebarBtn.addEventListener("click", closeSidebar);
+sidebarOverlay.addEventListener("click", closeSidebar);
 
 window.addEventListener("beforeunload", () => {
   if (currentUser.id) {

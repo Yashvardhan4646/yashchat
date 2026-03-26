@@ -27,7 +27,7 @@
         <i class="fa-solid fa-comments"></i>
       </div>
       <h1>YashChat</h1>
-      <p class="login-sub">Global + Room based chatting with image sharing and reactions.</p>
+      <p class="login-sub">Feed-style global + room based chat with images, reactions, invite links and private rooms.</p>
 
       <div class="input-wrap">
         <i class="fa-solid fa-user"></i>
@@ -62,12 +62,13 @@
       <aside class="sidebar" id="sidebar">
         <div class="sidebar-top">
           <div class="brand">
-            <div class="brand-icon"><i class="fa-solid fa-bolt"></i></div>
-            <div>
-              <h2>YashChat</h2>
-              <p>Public rooms</p>
-            </div>
-          </div>
+  <div class="brand-icon"><i class="fa-solid fa-bolt"></i></div>
+  <div>
+    <h2>YashChat</h2>
+    <p>Public rooms</p>
+    <p class="subline">Global feed & custom rooms</p>
+  </div>
+</div>
 
           <button id="closeSidebarBtn" class="icon-btn mobile-only">
             <i class="fa-solid fa-xmark"></i>
@@ -88,14 +89,31 @@
         <div class="sidebar-card grow-card">
           <div class="rooms-header">
             <p class="card-title">Rooms</p>
-            <button id="createRoomBtn" class="mini-btn">
-              <i class="fa-solid fa-plus"></i>
-            </button>
+            <div class="rooms-actions">
+              <button id="joinInviteBtn" class="mini-btn" title="Join via invite">
+                <i class="fa-solid fa-link"></i>
+              </button>
+              <button id="createRoomBtn" class="mini-btn" title="Create room">
+                <i class="fa-solid fa-plus"></i>
+              </button>
+            </div>
           </div>
 
+          <!-- CREATE ROOM -->
           <div class="create-room-box hidden" id="createRoomBox">
-            <input type="text" id="newRoomInput" placeholder="New room name..." maxlength="20" />
-            <button id="confirmCreateRoomBtn" class="primary-btn small-btn">Create</button>
+            <input type="text" id="newRoomInput" placeholder="Room name..." maxlength="20" />
+            <select id="roomPrivacySelect">
+              <option value="public">Public Room</option>
+              <option value="private">Private Room</option>
+            </select>
+            <input type="password" id="roomPasswordInput" class="hidden" placeholder="Room password..." maxlength="30" />
+            <button id="confirmCreateRoomBtn" class="primary-btn small-btn">Create Room</button>
+          </div>
+
+          <!-- JOIN INVITE -->
+          <div class="create-room-box hidden" id="joinInviteBox">
+            <input type="text" id="inviteLinkInput" placeholder="Paste invite link or code..." />
+            <button id="confirmJoinInviteBtn" class="primary-btn small-btn">Join Room</button>
           </div>
 
           <div id="roomsList" class="rooms-list"></div>
@@ -121,9 +139,14 @@
             </div>
           </div>
 
-          <button id="logoutButton" class="ghost-btn desktop-only">
-            <i class="fa-solid fa-right-from-bracket"></i> Leave
-          </button>
+          <div class="header-actions">
+            <button id="copyInviteBtn" class="ghost-btn">
+              <i class="fa-solid fa-link"></i> Invite
+            </button>
+            <button id="logoutButton" class="ghost-btn desktop-only">
+              <i class="fa-solid fa-right-from-bracket"></i> Leave
+            </button>
+          </div>
         </header>
 
         <div class="messages-area">
@@ -150,6 +173,8 @@
           <button class="emoji-btn">❤️</button>
           <button class="emoji-btn">👍</button>
           <button class="emoji-btn">👀</button>
+          <button class="emoji-btn">🤝</button>
+          <button class="emoji-btn">✨</button>
         </div>
 
         <!-- COMPOSER -->
